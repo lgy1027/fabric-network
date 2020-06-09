@@ -1,0 +1,231 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: lgy
+  name:	peer0-org
+spec:
+  selector:
+    matchLabels:
+      peer-id: peer0
+  serviceName: "peer0"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: etcdraft
+        role: peer
+        peer-id: peer0
+        org: peer-org
+    spec:
+      nodeSelector:
+        peer: two
+      containers:
+        - name: peer0-org
+          image: core.harbor.domain/blockchain/hyperledger/hyperledger/fabric-peer:1.4.6
+          env:
+            - name: CORE_VM_ENDPOINT
+              value: "unix:///host/var/run/docker.sock"
+            - name: CORE_PEER_LISTENADDRESS
+#              value: "0.0.0.0:7051"
+#            - name: CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE
+#              value: "raft_clustor_default"
+            - name: FABRIC_LOGGING_SPEC
+              value: "DEBUG"
+            - name: CORE_PEER_TLS_ENABLED
+              value: "true"
+            - name: CORE_PEER_GOSSIP_USELEADERELECTION
+              value: "true"
+            - name: CORE_PEER_GOSSIP_ORGLEADER
+              value: "false"
+            - name: CORE_PEER_PROFILE_ENABLED
+              value: "true"
+            - name: CORE_PEER_TLS_CERT_FILE
+              value: "/etc/hyperledger/fabric/tls/server.crt"
+            - name: CORE_PEER_TLS_KEY_FILE
+              value: "/etc/hyperledger/fabric/tls/server.key"
+            - name: CORE_PEER_TLS_ROOTCERT_FILE
+              value: "/etc/hyperledger/fabric/tls/ca.crt"
+            - name: CORE_PEER_ID
+              value: "peer0.lgy.svc.cluster.local"
+            - name: CORE_PEER_ADDRESS
+              value: "peer0.lgy.svc.cluster.local:7051"
+            #        - name: CORE_PEER_GOSSIP_BOOTSTRAP
+            #          value: "peer0.lgy:7051"
+            - name: CORE_PEER_GOSSIP_EXTERNALENDPOINT
+              value: "peer0.lgy.svc.cluster.local:7051"
+            - name: CORE_PEER_CHAINCODELISTENADDRESS
+              value: "0.0.0.0:7052"
+            - name: CORE_PEER_CHAINCODEADDRESS
+              value: "peer0.lgy.svc.cluster.local:7052"
+            - name: CORE_PEER_LOCALMSPID
+              value: "Org1MSP"
+          workingDir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+          ports:
+            - containerPort: 7051
+            - containerPort: 7052
+            - containerPort: 7053
+          command: ["peer"]
+          args: ["node","start"]
+          volumeMounts:
+            - mountPath: /etc/hyperledger/fabric/msp
+              name: msp-dir
+            - mountPath: /etc/hyperledger/fabric/tls
+              name: tls-dir
+            - mountPath: /host/var/run/
+              name: run
+            - mountPath: /var/hyperledger/production
+              name: ledger-dir
+      volumes:
+        - name: msp-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/peerOrganizations/lgy.svc.cluster.local/peers/peer0.lgy.svc.cluster.local/msp
+        - name: tls-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/peerOrganizations/lgy.svc.cluster.local/peers/peer0.lgy.svc.cluster.local/tls
+        - name: run
+          hostPath:
+            path: /var/run
+        - name: ledger-dir
+          hostPath:
+            path: /opt/lgy/peer0_ledger
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: lgy
+  name: peer0
+spec:
+  selector:
+    app: etcdraft
+    role: peer
+    peer-id: peer0
+    org: peer-org
+  clusterIP: None
+  ports:
+    - name: listen-endpoint
+      protocol: TCP
+      port: 7051
+
+    - name: chaincode-listen
+      protocol: TCP
+      port: 7052
+
+    - name: event-listen
+      protocol: TCP
+      port: 7053
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: lgy
+  name:	peer1-org
+spec:
+  selector:
+    matchLabels:
+      peer-id: peer1
+  serviceName: "peer1"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: etcdraft
+        role: peer
+        peer-id: peer1
+        org: peer-org
+    spec:
+      nodeSelector:
+        peer: one
+      containers:
+        - name: peer1-org
+          image: core.harbor.domain/blockchain/hyperledger/hyperledger/fabric-peer:1.4.6
+          env:
+            - name: CORE_VM_ENDPOINT
+              value: "unix:///host/var/run/docker.sock"
+            - name: CORE_PEER_LISTENADDRESS
+              value: "0.0.0.0:7051"
+#            - name: CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE
+#              value: "raft_clustor_default"
+            - name: FABRIC_LOGGING_SPEC
+              value: "DEBUG"
+            - name: CORE_PEER_TLS_ENABLED
+              value: "true"
+            - name: CORE_PEER_GOSSIP_USELEADERELECTION
+              value: "true"
+            - name: CORE_PEER_GOSSIP_ORGLEADER
+              value: "false"
+            - name: CORE_PEER_PROFILE_ENABLED
+              value: "true"
+            - name: CORE_PEER_TLS_CERT_FILE
+              value: "/etc/hyperledger/fabric/tls/server.crt"
+            - name: CORE_PEER_TLS_KEY_FILE
+              value: "/etc/hyperledger/fabric/tls/server.key"
+            - name: CORE_PEER_TLS_ROOTCERT_FILE
+              value: "/etc/hyperledger/fabric/tls/ca.crt"
+            - name: CORE_PEER_ID
+              value: "peer1.lgy.svc.cluster.local"
+            - name: CORE_PEER_ADDRESS
+              value: "peer1.lgy.svc.cluster.local:7051"
+            #        - name: CORE_PEER_GOSSIP_BOOTSTRAP
+            #          value: "peer0.lgy:7051"
+            - name: CORE_PEER_GOSSIP_EXTERNALENDPOINT
+              value: "peer1.lgy.svc.cluster.local:7051"
+            - name: CORE_PEER_CHAINCODELISTENADDRESS
+              value: "0.0.0.0:7052"
+            - name: CORE_PEER_CHAINCODEADDRESS
+              value: "peer1.lgy.svc.cluster.local:7052"
+            - name: CORE_PEER_LOCALMSPID
+              value: "Org1MSP"
+          workingDir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+          ports:
+            - containerPort: 7051
+            - containerPort: 7052
+            - containerPort: 7053
+          command: ["peer"]
+          args: ["node","start"]
+          volumeMounts:
+            - mountPath: /etc/hyperledger/fabric/msp
+              name: msp-dir
+            - mountPath: /etc/hyperledger/fabric/tls
+              name: tls-dir
+            - mountPath: /host/var/run/
+              name: run
+            - mountPath: /var/hyperledger/production
+              name: ledger-dir
+      volumes:
+        - name: msp-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/peerOrganizations/lgy.svc.cluster.local/peers/peer1.lgy.svc.cluster.local/msp
+        - name: tls-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/peerOrganizations/lgy.svc.cluster.local/peers/peer1.lgy.svc.cluster.local/tls
+        - name: run
+          hostPath:
+            path: /var/run
+        - name: ledger-dir
+          hostPath:
+            path: /opt/lgy/peer1_ledger
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: lgy
+  name: peer1
+spec:
+  selector:
+    app: etcdraft
+    role: peer
+    peer-id: peer1
+    org: peer-org
+  clusterIP: None
+  ports:
+    - name: listen-endpoint
+      protocol: TCP
+      port: 7051
+
+    - name: chaincode-listen
+      protocol: TCP
+      port: 7052
+
+    - name: event-listen
+      protocol: TCP
+      port: 7053

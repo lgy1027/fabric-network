@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: lgy
+  name: sdk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      sdk-id: sdk
+  template:
+    metadata:
+      labels:
+       sdk-id: sdk
+    spec:
+      nodeSelector:
+        peer: one
+      volumes:
+       - name: fabric-dir
+         hostPath:
+            path: /opt/lgy/log
+      containers:
+        - name: sdk
+          image: core.harbor.domain/blockchain/hyperledger/fabric_sdk:v1
+          workingDir: /fabricServer
+          command: ["sh"]
+          args: ["-c","./fabricServer -cc=false -jc=false -icc=false -itcc=false -ucc=false"]
+          ports:
+           - containerPort: 8899
+          volumeMounts:
+           - mountPath: /fabricServer/log
+             name: fabric-dir
+---
+apiVersion: v1
+kind: Service
+metadata:
+   namespace: lgy
+   name: sdk-service
+spec:
+ selector:
+   sdk-id: sdk
+ ports:
+   - name: sdk-port
+     protocol: TCP
+     port: 8899

@@ -1,0 +1,305 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: lgy
+  name: orderer1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      orderer-id: orderer1
+  template:
+    metadata:
+      labels:
+        app: etcdraft
+        role: orderer
+        org: orderer-org
+        orderer-id: orderer1
+    spec:
+      nodeSelector:
+        orderer: one
+      containers:
+        - name: orderer1
+          image: core.harbor.domain/blockchain/hyperledger/hyperledger/fabric-orderer:1.4.6
+          env:
+            - name: ORDERER_GENERAL_GENESISMETHOD
+              value: file
+#            - name: CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE
+#              value: raft_clustor_default
+            - name: FABRIC_LOGGING_SPEC
+              value: debug
+            - name: ORDERER_GENERAL_LISTENADDRESS
+              value: 0.0.0.0
+            - name: ORDERER_GENERAL_LISTENPORT
+              value: "7050"
+            - name: ORDERER_GENERAL_GENESISFILE
+              value: /var/hyperledger/orderer/orderer.genesis.block
+            - name: ORDERER_GENERAL_LOCALMSPID
+              value: OrdererMSP
+            - name: ORDERER_GENERAL_LOCALMSPDIR
+              value: /var/hyperledger/orderer/msp
+            - name: ORDERER_GENERAL_TLS_ENABLED
+              value: "true"
+            - name: ORDERER_GENERAL_TLS_PRIVATEKEY
+              value: /var/hyperledger/orderer/tls/server.key
+            - name: ORDERER_GENERAL_TLS_CERTIFICATE
+              value: /var/hyperledger/orderer/tls/server.crt
+            - name: ORDERER_GENERAL_TLS_ROOTCAS
+              value: '[/var/hyperledger/orderer/tls/ca.crt]'
+            - name: ORDERER_KAFKA_TOPIC_REPLICATIONFACTOR
+              value: "1"
+            - name: ORDERER_KAFKA_VERBOSE
+              value: "true"
+            - name: ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE
+              value: /var/hyperledger/orderer/tls/server.crt
+            - name: ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY
+              value: /var/hyperledger/orderer/tls/server.key
+            - name: ORDERER_GENERAL_CLUSTER_ROOTCAS
+              value: '[/var/hyperledger/orderer/tls/ca.crt]'
+          workingDir: /opt/gopath/src/github.com/hyperledger/fabric
+          command: ["orderer"]
+          volumeMounts:
+            - mountPath: /var/hyperledger/orderer/orderer.genesis.block
+              name: block-dir
+            - mountPath: /var/hyperledger/orderer/msp
+              name: msp-dir
+            - mountPath: /var/hyperledger/orderer/tls
+              name: tls-dir
+            - mountPath: /var/hyperledger/production/orderer
+              name: ledger-dir
+          ports:
+            - containerPort: 7050
+      volumes:
+        - name: block-dir
+          hostPath:
+            path: /opt/lgy/channel-artifacts/genesis.block
+        - name: msp-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/ordererOrganizations/lgy/orderers/orderer1.lgy/msp
+        - name: tls-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/ordererOrganizations/lgy/orderers/orderer1.lgy/tls
+        - name: ledger-dir
+          hostPath:
+            path: /opt/lgy/orderer1_ledger
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: lgy
+  name: orderer1
+spec:
+  selector:
+    app: etcdraft
+    role: orderer
+    org: orderer-org
+    orderer-id: orderer1
+  clusterIP: None
+  ports:
+    - name: listen-endpoint
+      protocol: TCP
+      port: 7050
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: lgy
+  name: orderer2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      orderer-id: orderer2
+  template:
+    metadata:
+      labels:
+        app: etcdraft
+        role: orderer
+        org: orderer-org
+        orderer-id: orderer2
+    spec:
+      nodeSelector:
+        orderer: two
+      containers:
+        - name: orderer2
+          image: core.harbor.domain/blockchain/hyperledger/hyperledger/fabric-orderer:1.4.6
+          env:
+            - name: ORDERER_GENERAL_GENESISMETHOD
+              value: file
+#            - name: CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE
+#              value: raft_clustor_default
+            - name: FABRIC_LOGGING_SPEC
+              value: debug
+            - name: ORDERER_GENERAL_LISTENADDRESS
+              value: 0.0.0.0
+            - name: ORDERER_GENERAL_LISTENPORT
+              value: "7050"
+            - name: ORDERER_GENERAL_GENESISFILE
+              value: /var/hyperledger/orderer/orderer.genesis.block
+            - name: ORDERER_GENERAL_LOCALMSPID
+              value: OrdererMSP
+            - name: ORDERER_GENERAL_LOCALMSPDIR
+              value: /var/hyperledger/orderer/msp
+            - name: ORDERER_GENERAL_TLS_ENABLED
+              value: "true"
+            - name: ORDERER_GENERAL_TLS_PRIVATEKEY
+              value: /var/hyperledger/orderer/tls/server.key
+            - name: ORDERER_GENERAL_TLS_CERTIFICATE
+              value: /var/hyperledger/orderer/tls/server.crt
+            - name: ORDERER_GENERAL_TLS_ROOTCAS
+              value: '[/var/hyperledger/orderer/tls/ca.crt]'
+            - name: ORDERER_KAFKA_TOPIC_REPLICATIONFACTOR
+              value: "1"
+            - name: ORDERER_KAFKA_VERBOSE
+              value: "true"
+            - name: ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE
+              value: /var/hyperledger/orderer/tls/server.crt
+            - name: ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY
+              value: /var/hyperledger/orderer/tls/server.key
+            - name: ORDERER_GENERAL_CLUSTER_ROOTCAS
+              value: '[/var/hyperledger/orderer/tls/ca.crt]'
+          workingDir: /opt/gopath/src/github.com/hyperledger/fabric
+          command: ["orderer"]
+          volumeMounts:
+            - mountPath: /var/hyperledger/orderer/orderer.genesis.block
+              name: block-dir
+            - mountPath: /var/hyperledger/orderer/msp
+              name: msp-dir
+            - mountPath: /var/hyperledger/orderer/tls
+              name: tls-dir
+            - mountPath: /var/hyperledger/production/orderer
+              name: ledger-dir
+          ports:
+            - containerPort: 7050
+      volumes:
+        - name: block-dir
+          hostPath:
+            path: /opt/lgy/channel-artifacts/genesis.block
+        - name: msp-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/ordererOrganizations/lgy/orderers/orderer2.lgy/msp
+        - name: tls-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/ordererOrganizations/lgy/orderers/orderer2.lgy/tls
+        - name: ledger-dir
+          hostPath:
+            path: /opt/lgy/orderer2_ledger
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: lgy
+  name: orderer2
+spec:
+  selector:
+    app: etcdraft
+    role: orderer
+    org: orderer-org
+    orderer-id: orderer2
+  clusterIP: None
+  ports:
+    - name: listen-endpoint
+      protocol: TCP
+      port: 7050
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: lgy
+  name: orderer3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      orderer-id: orderer3
+  template:
+    metadata:
+      labels:
+        app: etcdraft
+        role: orderer
+        org: orderer-org
+        orderer-id: orderer3
+    spec:
+      nodeSelector:
+        orderer: three
+      containers:
+        - name: orderer3
+          image: core.harbor.domain/blockchain/hyperledger/hyperledger/fabric-orderer:1.4.6
+          env:
+            - name: ORDERER_GENERAL_GENESISMETHOD
+              value: file
+#            - name: CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE
+#              value: raft_clustor_default
+            - name: FABRIC_LOGGING_SPEC
+              value: debug
+            - name: ORDERER_GENERAL_LISTENADDRESS
+              value: 0.0.0.0
+            - name: ORDERER_GENERAL_LISTENPORT
+              value: "7050"
+            - name: ORDERER_GENERAL_GENESISFILE
+              value: /var/hyperledger/orderer/orderer.genesis.block
+            - name: ORDERER_GENERAL_LOCALMSPID
+              value: OrdererMSP
+            - name: ORDERER_GENERAL_LOCALMSPDIR
+              value: /var/hyperledger/orderer/msp
+            - name: ORDERER_GENERAL_TLS_ENABLED
+              value: "true"
+            - name: ORDERER_GENERAL_TLS_PRIVATEKEY
+              value: /var/hyperledger/orderer/tls/server.key
+            - name: ORDERER_GENERAL_TLS_CERTIFICATE
+              value: /var/hyperledger/orderer/tls/server.crt
+            - name: ORDERER_GENERAL_TLS_ROOTCAS
+              value: '[/var/hyperledger/orderer/tls/ca.crt]'
+            - name: ORDERER_KAFKA_TOPIC_REPLICATIONFACTOR
+              value: "1"
+            - name: ORDERER_KAFKA_VERBOSE
+              value: "true"
+            - name: ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE
+              value: /var/hyperledger/orderer/tls/server.crt
+            - name: ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY
+              value: /var/hyperledger/orderer/tls/server.key
+            - name: ORDERER_GENERAL_CLUSTER_ROOTCAS
+              value: '[/var/hyperledger/orderer/tls/ca.crt]'
+          workingDir: /opt/gopath/src/github.com/hyperledger/fabric
+          command: ["orderer"]
+          volumeMounts:
+            - mountPath: /var/hyperledger/orderer/orderer.genesis.block
+              name: block-dir
+            - mountPath: /var/hyperledger/orderer/msp
+              name: msp-dir
+            - mountPath: /var/hyperledger/orderer/tls
+              name: tls-dir
+            - mountPath: /var/hyperledger/production/orderer
+              name: ledger-dir
+          ports:
+            - containerPort: 7050
+      volumes:
+        - name: block-dir
+          hostPath:
+            path: /opt/lgy/channel-artifacts/genesis.block
+        - name: msp-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/ordererOrganizations/lgy/orderers/orderer3.lgy/msp
+        - name: tls-dir
+          hostPath:
+            path: /opt/lgy/crypto-config/ordererOrganizations/lgy/orderers/orderer3.lgy/tls
+        - name: ledger-dir
+          hostPath:
+            path: /opt/lgy/orderer3_ledger
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: lgy
+  name: orderer3
+spec:
+  selector:
+    app: etcdraft
+    role: orderer
+    org: orderer-org
+    orderer-id: orderer3
+  clusterIP: None
+  ports:
+    - name: listen-endpoint
+      protocol: TCP
+      port: 7050

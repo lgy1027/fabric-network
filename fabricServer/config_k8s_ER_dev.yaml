@@ -1,0 +1,191 @@
+version: 1.0.0
+
+client:
+  organization: Org1MSP
+  logging:
+    level: debug
+  cryptoconfig:
+    path: /fabricServer/crypto-config
+  credentialStore:
+    path: /tmp/raft-store
+    cryptoStore:
+      path: /tmp/raft-msp
+  BCCSP:
+    security:
+      enabled: true
+      default:
+        provider: "SW"
+      hashAlgorithm: "SHA2"
+      softVerify: true
+      level: 256
+  tlsCerts:
+    systemCertPool: false
+    client:
+      key:
+        path:
+      cert:
+        path:
+
+channels:
+  lgschannel:
+    peers:
+      peer0.lgy.svc.cluster.local:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+      peer1.lgy.svc.cluster.local:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+    policies:
+      queryChannelConfig:
+        minResponses: 1
+        maxTargets: 1
+        retryOpts:
+          attempts: 5
+          initialBackoff: 500ms
+          maxBackoff: 5s
+          backoffFactor: 2.0
+      discovery:
+        maxTargets: 2
+        retryOpts:
+          attempts: 4
+          initialBackoff: 500ms
+          maxBackoff: 5s
+          backoffFactor: 2.0
+      eventService:
+        resolverStrategy: PreferOrg
+        balancer: Random
+        blockHeightLagThreshold: 5
+        reconnectBlockHeightLagThreshold: 10
+        peerMonitorPeriod: 5s
+
+organizations:
+  Org1MSP:
+    mspid: Org1MSP
+    cryptoPath: peerOrganizations/lgy.svc.cluster.local/users/{userName}@lgy.svc.cluster.local/msp
+    peers:
+      - peer0.lgy.svc.cluster.local
+      - peer1.lgy.svc.cluster.local
+
+    certificateAuthorities:
+      - ca.lgy.svc.cluster.local
+
+  # Orderer组织名称
+  ordererorg:
+    # 组织的MSPID
+    mspID: OrdererMSP
+    # 加载用户需要的密钥和证书，绝对路径或相对路径
+    cryptoPath: ordererOrganizations/lgy/users/{username}@lgy/msp
+
+# 发送交易请求或通道创建、更新请求到的orderers列表
+# 如果定义了超过一个orderer，SDK使用哪一个orderer由代码实现时指定
+orderers:
+  # orderer节点，可以定义多个
+  orderer1.lgy:
+    url: orderer1.lgy:7050
+    # 以下属性由gRPC库定义，会被传递给gRPC客户端构造函数
+    grpcOptions:
+      ssl-target-name-override: orderer1.lgy
+      # 下列参数用于设置服务器上的keepalive策略，不兼容的设置会导致连接关闭
+      # 当keep-alive-time被设置为0或小于激活客户端的参数，下列参数失效
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: false
+    # 证书的绝对路径
+    tlsCACerts:
+      # Certificate location absolute path
+      path: /fabricServer/crypto-config/ordererOrganizations/lgy/tlsca/tlsca.lgy-cert.pem
+
+# peers节点列表
+peers:
+  # peer节点定义，可以定义多个
+  peer0.lgy.svc.cluster.local:
+    # this URL is used to send endorsement and query requests
+    # URL用于发送背书和查询请求
+    url: peer0.lgy.svc.cluster.local:7051
+    # eventUrl is only needed when using eventhub (default is delivery service)
+    eventUrl: peer0.lgy.svc.cluster.local:7053
+
+    grpcOptions:
+      ssl-target-name-override: peer0.lgy.svc.cluster.local
+      # These parameters should be set in coordination with the keepalive policy on the server,
+      # as incompatible settings can result in closing of connection.
+      # When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      # allow-insecure will be taken into consideration if address has no protocol defined, if true then grpc or else grpcs
+      allow-insecure: false
+    # 证书的绝对路径
+    tlsCACerts:
+      # Certificate location absolute path
+      path: /fabricServer/crypto-config/peerOrganizations/lgy.svc.cluster.local/tlsca/tlsca.lgy.svc.cluster.local-cert.pem
+
+  peer1.lgy.svc.cluster.local:
+    # this URL is used to send endorsement and query requests
+    url: peer1.lgy.svc.cluster.local:7051
+    # eventUrl is only needed when using eventhub (default is delivery service)
+    eventUrl: peer1.lgy.svc.cluster.local:7053
+
+    grpcOptions:
+      ssl-target-name-override: peer1.lgy.svc.cluster.local
+      # These parameters should be set in coordination with the keepalive policy on the server,
+      # as incompatible settings can result in closing of connection.
+      # When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      # allow-insecure will be taken into consideration if address has no protocol defined, if true then grpc or else grpcs
+      allow-insecure: false
+
+    tlsCACerts:
+      # Certificate location absolute path
+      path: /fabricServer/crypto-config/peerOrganizations/lgy.svc.cluster.local/tlsca/tlsca.lgy.svc.cluster.local-cert.pem
+
+certificateAuthorities:
+
+  ca.lgy.svc.cluster.local:
+    url: http://ca.lgy.svc.cluster.local:7054
+    tlsCACerts:
+
+      path: /fabricServer/crypto-config/peerOrganizations/lgy.svc.cluster.local/tlsca/tlsca.lgy.svc.cluster.local-cert.pem
+
+    registrar:
+      enrollId: admin
+      enrollSecret: adminpw
+    # [Optional] The optional name of the CA.
+    caName: ca.lgy.svc.cluster.local
+
+entityMatchers:
+  peer:
+    - pattern: (\w*)peer0.lgy.svc.cluster.local(\w*)
+      urlSubstitutionExp: peer0.lgy.svc.cluster.local:7051
+      eventUrlSubstitutionExp: peer0.lgy.svc.cluster.local:7053
+      sslTargetOverrideUrlSubstitutionExp: peer0.lgy.svc.cluster.local
+      mappedHost: peer0.lgy.svc.cluster.local
+
+    - pattern: (\w*)peer1.lgy.svc.cluster.local(\w*)
+      urlSubstitutionExp: peer1.lgy.svc.cluster.local:7051
+      eventUrlSubstitutionExp: peer1.lgy.svc.cluster.local:7053
+      sslTargetOverrideUrlSubstitutionExp: peer1.lgy.svc.cluster.local
+      mappedHost: peer1.lgy.svc.cluster.local
+
+  orderer:
+    - pattern: (\w*)orderer1.lgy(\w*)
+      urlSubstitutionExp: orderer1.lgy:7050
+      sslTargetOverrideUrlSubstitutionExp: orderer1.lgy
+      mappedHost: orderer1.lgy
+
+  certificateAuthorities:
+    - pattern: (\w*)ca.lgy.svc.cluster.local(\w*)
+      urlSubstitutionExp: http://ca.lgy.svc.cluster.local:7054
+      mappedHost: ca.lgy.svc.cluster.local

@@ -1,0 +1,19 @@
+version: '2'
+
+services:
+  # 多机网络域名对应ip
+  rafthosts:
+    image: busybox
+    volumes:
+      - /etc/localtime:/etc/localtime
+    environment:
+      - COLUMNS=500
+      - GODEBUG=netdns=go
+    extra_hosts:
+      - "orderer1.lgy.com:192.168.1.11"
+      - "orderer2.lgy.com:192.168.1.8"
+      - "orderer3.lgy.com:192.168.1.9"
+      - "peer0.org1.lgy.com:192.168.1.8"
+      - "peer1.org1.lgy.com:192.168.1.9"
+      - "peer0.org2.lgy.com:192.168.1.10"
+      - "peer1.org2.lgy.com:192.168.1.11"
