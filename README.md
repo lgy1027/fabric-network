@@ -1,6 +1,6 @@
 #Fabric-NetWork
 
-Fabric1.4.6 based networking environment
+Fabric1.4.6 Based Networking Environment K8S and server node
 
 ````cassandraql
 multi-node:
