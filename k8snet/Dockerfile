@@ -1,6 +1,6 @@
 FROM busybox
 
-MAINTAINER lgy
+MAINTAINER 1065940@qq.com
 
 ENV GOPATH /fabricServer
 
